@@ -3,8 +3,8 @@ import json
 import shutil
 import glob
 #Make sure to change the directory
-MASTER_DIR = r"C:\Users\"
-PARENT_DIR = r"C:\Users\"
+MASTER_DIR = r"C:\"
+PARENT_DIR = r"C:\"
 
 def get_image_mapping(qpproj_path):
     """Reads a project file to match Image Names with their random Data Folder IDs."""
@@ -49,9 +49,9 @@ def main():
     print(f"SUCCESS: Found {len(master_mapping)} images in the Master Project.")
     
     files_copied_count = 0
-    ontology_copied = False
+    copied_ontologies = set()
 
-    # Loop through all folders inside the Individual Projects directory
+    # Loop through all folders inside the Parent Projects directory
     for project_folder in os.listdir(PARENT_DIR):
         proj_path = os.path.join(PARENT_DIR, project_folder)
         qpproj_file = os.path.join(proj_path, 'project.qpproj')
@@ -60,15 +60,15 @@ def main():
         if not os.path.exists(qpproj_file):
             continue
             
-        # AUTOMATICALLY COPY THE ONTOLOGY FILE
-        if not ontology_copied:
-            ontology_files = glob.glob(os.path.join(proj_path, '*Ontology.json'))
-            if ontology_files:
-                onto_source = ontology_files[0] # Grab the first one found
-                onto_dest = os.path.join(MASTER_DIR, os.path.basename(onto_source))
+        # AUTOMATICALLY COPY ALL UNIQUE ONTOLOGY FILES
+        ontology_files = glob.glob(os.path.join(proj_path, '*Ontology.json'))
+        for onto_source in ontology_files:
+            onto_filename = os.path.basename(onto_source)
+            if onto_filename not in copied_ontologies:
+                onto_dest = os.path.join(MASTER_DIR, onto_filename)
                 shutil.copy2(onto_source, onto_dest)
-                print(f"\nSUCCESS: Copied Ontology file -> {os.path.basename(onto_source)}\n")
-                ontology_copied = True
+                print(f"\nSUCCESS: Copied Ontology file -> {onto_filename}\n")
+                copied_ontologies.add(onto_filename)
 
         indiv_mapping = get_image_mapping(qpproj_file)
         
@@ -97,6 +97,7 @@ def main():
 
     print("\n--- SCRIPT COMPLETE ---")
     print(f"Total ABBA files copied: {files_copied_count}")
+    print(f"Total unique Ontology files copied: {len(copied_ontologies)}")
 
 if __name__ == "__main__":
     main()
